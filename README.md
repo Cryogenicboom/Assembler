@@ -1,108 +1,88 @@
-# Assembler
-### Overview:
-This project is a two pass assembler for the Hack computer from Nand2Tetris.
-<br>
-Working : File_name.asm --> Assembler --> File_name.hack
-<br>
-The assembler supports:
-<br>
-> A-instructions (@value), where value can be an integer or a string (variable)<br>
-> C-instructions (destination = computation ;jump)<br>
-> Labels ((LABEL))<br>
-> Variables (allocated from RAM address 16)<br>
-> Predefined symbols (SP, LCL, ARG, R0–R15, SCREEN, KBD)
-<br>
+# Hack Assembler (Python)
 
-1. The assembler is built to perform Line cleaning (strip out comments and whitespaces)<br>
-2. Parse C-instruction (dest/comp/jump) <br>
-3. Code tables (dest_bits, comp_bits, jump_bits)<br>
-4. Symbol table
-<br>
-Two passes:<br>
+This project is a simple assembler written in Python for the **Hack computer** from the *Nand2Tetris* course.  
+It converts `.asm` assembly programs into `.hack` binary machine code.
 
-> Pass 1: label resolution (ROM addresses)<br>
-> Pass 2: machine code generation (A-instruction / c-instruction to binary)
-<br>
+The goal of this project was to understand how assembly instructions are translated into binary at a low level, instead of relying on existing tools.
 
-## Code explaination: 
-<br>
-### Reading the file and preparing output: 
+---
 
-<h2>1. The file is read once at the beginning:<br>
+## What this assembler does
 
-> with open(filename, 'r') as file:<br>
-> - lines_list = file.readlines()
+- Reads a `.asm` file line by line
+- Removes comments and extra whitespace
+- Handles **A-instructions**, **C-instructions**, and **labels**
+- Builds and manages a **symbol table**
+- Converts instructions into 16-bit binary format
+- Writes the output into a `.hack` file
 
+This assembler follows the Hack instruction format exactly.
 
-lines_list is a list of strings.
+---
 
-Each element is one line from the .asm file.
+## Instruction handling
 
-Before writing .hack, the target file is cleared to avoid mixing old content with new assembly output:
+### A-instructions
+- Format: `@value`
+- Supports:
+  - Numeric values (e.g. `@21`)
+  - Predefined symbols (`SP`, `R0`, `SCREEN`, etc.)
+  - User-defined variables (assigned RAM addresses starting from 16)
 
-with open(hack_file, 'w') as f:
-    pass
+### C-instructions
+- Supports all valid combinations of:
+  - `dest=comp;jump`
+- Uses lookup tables for:
+  - `dest`
+  - `comp`
+  - `jump`
 
+The binary output is generated as:
 
-Later, the assembler opens the same file in append mode to write the actual output:
+## Two-pass approach
 
-with open(hack_file, 'a') as f:
-    ...
+### Pass 1: Symbol table
+- Scans the file to find labels like `(LOOP)`
+- Stores their ROM addresses
+- Labels are not converted into binary
 
-3. Cleaning lines: removing comments and whitespace
+### Pass 2: Code generation
+- Converts instructions into binary
+- Assigns RAM addresses to variables
+- Writes final machine code into the `.hack` file
 
-Function: clean_line(line)
+---
 
-Goal: turn raw lines from the .asm file into logical instructions or "empty".
+## Project structure
 
-Steps:
+- `assembler.py` – main assembler code
+- Input: `program.asm`
+- Output: `program.hack`
 
-Find inline comments
+The `.asm` file must be in the same directory as `assembler.py`.
 
-The Hack comment syntax is //.
+---
 
-line.find("//") gives the index of the first / in //.
+## How to run
 
-If index != -1, it means a comment exists:
+1. Place your `.asm` file in the same folder as `assembler.py`
+2. Run the program:
+3. Enter the file name **without** `.asm`
+4. The output `.hack` file will be generated automatically
 
-index = line.find("//")
-if index != -1:
-    before_comment = line[:index]
-    before_comment = before_comment.strip()
-    if len(before_comment) == 0:
-        return "empty"
-    else:
-        return before_comment
+This project is part of my learning in computer architecture and low-level systems.
 
+---
 
-Everything after // is discarded.
+## Limitations
 
-.strip() removes spaces and tabs from both ends.
+- No error handling for invalid instructions
+- Assumes input follows Hack assembly rules
+- Single-file implementation for learning clarity
 
-If the remaining text is empty, the function returns "empty".
+---
 
-Handle lines without //
-If no comment is found (index == -1), we only strip whitespace:
+## References
 
-remove_whitespace_lines = line.strip()
-if len(remove_whitespace_lines) == 0:
-    return "empty"
-else:
-    return remove_whitespace_lines
-
-
-So clean_line returns either:
-
-a cleaned non-empty instruction string (e.g. "@2", "D=A", "(LOOP)"), or
-
-the string "empty" for blank/comment-only lines.
-
-4. Code tables: dest, comp, jump → bits
-
-Three dictionaries are used to convert mnemonics into bit patterns:
-
-dest_bits → 3-bit string
-
-jump_bits → 3-bit string
-
-comp_bits → 7-bit string
+- Nand2Tetris course
+- Hack Computer Specification
